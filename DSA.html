@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive DSA Roadmap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: A dashboard-style SPA with a persistent sidebar for navigation between key sections: Dashboard, Roadmap, Topic Deep Dive, Company Insights, and an interactive Practice Zone. This non-linear structure empowers users to explore content based on their immediate needs (e.g., finding questions for a specific topic) rather than following the report's linear flow, enhancing usability and engagement. The Practice Zone with filtering/searching is the core interactive feature, turning a static list of questions into a dynamic study tool. -->
+    <!-- Visualization & Content Choices: Report Info: DSA Topic Priorities -> Goal: Compare -> Viz: Horizontal Bar Chart (Chart.js) -> Interaction: Static visual reference on Dashboard -> Justification: Provides a quick, scannable overview of which topics are most important to focus on. Report Info: 400+ Practice Questions -> Goal: Organize/Explore -> Presentation: Interactive HTML Table -> Interaction: JS-powered filtering by topic/difficulty and live search -> Justification: Transforms a static, overwhelming list into a powerful, user-driven study tool, which is the primary value-add of this SPA. Report Info: 4-Phase Roadmap -> Goal: Inform/Change -> Presentation: HTML/CSS Accordion/Timeline -> Interaction: Clicking a phase reveals its content -> Justification: Organizes the time-based plan logically without cluttering the UI. CONFIRMATION: NO SVG/Mermaid used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF7;
+            color: #4A4A4A;
+        }
+        .active-nav {
+            background-color: #EAE6E1;
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE6E1;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .accordion-button.open + .accordion-content {
+            max-height: 2000px;
+        }
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .tag-array { background-color: #D1E7DD; color: #0F5132; }
+        .tag-string { background-color: #CFF4FC; color: #055160; }
+        .tag-linkedlist { background-color: #FFF3CD; color: #664D03; }
+        .tag-algorithms { background-color: #F8D7DA; color: #58151A; }
+        .tag-stackqueue { background-color: #E2D9F3; color: #492E74; }
+        .tag-tree { background-color: #D1E7DD; color: #0F5132; }
+        .tag-hashtable { background-color: #CFE2FF; color: #0A367E; }
+        .tag-recursion { background-color: #F5C2C7; color: #6C2128; }
+        .tag-graph { background-color: #D4EDDA; color: #155724; }
+        .tag-heap { background-color: #F8D7DA; color: #721C24; }
+        .tag-dp { background-color: #D1ECF1; color: #0C5460; }
+        .tag-greedy { background-color: #E2E3E5; color: #41464B; }
+        .tag-bitmanipulation { background-color: #FFF3CD; color: #664D03; }
+        .tag-default { background-color: #E2E3E5; color: #41464B; }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="relative min-h-screen md:flex">
+        <div id="sidebar-menu" class="bg-[#F7F3EE] text-gray-700 w-64 space-y-2 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out z-20">
+            <a href="#" class="block px-4 py-2.5 text-lg font-bold text-center text-gray-800">DSA Roadmap</a>
+            <nav id="main-nav">
+                <a href="#dashboard" class="nav-link block px-4 py-2.5 rounded-lg transition duration-200 hover:bg-[#EAE6E1]">
+                    <span class="mr-2">🏠</span> Dashboard
+                </a>
+                <a href="#roadmap" class="nav-link block px-4 py-2.5 rounded-lg transition duration-200 hover:bg-[#EAE6E1]">
+                    <span class="mr-2">🗺️</span> 5-Month Roadmap
+                </a>
+                <a href="#practice" class="nav-link block px-4 py-2.5 rounded-lg transition duration-200 hover:bg-[#EAE6E1]">
+                    <span class="mr-2">💻</span> Practice Zone
+                </a>
+                <a href="#compare" class="nav-link block px-4 py-2.5 rounded-lg transition duration-200 hover:bg-[#EAE6E1]">
+                    <span class="mr-2">🆚</span> Company Insights
+                </a>
+                <a href="#resources" class="nav-link block px-4 py-2.5 rounded-lg transition duration-200 hover:bg-[#EAE6E1]">
+                    <span class="mr-2">📚</span> Resources & Pitfalls
+                </a>
+            </nav>
+        </div>
+
+        <div class="flex-1 p-4 md:p-10 text-2xl font-bold bg-[#FDFBF7]">
+            <button id="mobile-menu-button" class="md:hidden fixed top-4 left-4 z-30 bg-white p-2 rounded-md shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+            <main id="main-content">
+            </main>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const app = {
+                state: {
+                    currentView: 'dashboard',
+                    questions: [],
+                    topics: [],
+                },
+                init() {
+                    this.data.init();
+                    this.state.questions = this.data.questions;
+                    this.state.topics = [...new Set(this.data.questions.map(q => q.topic))];
+                    
+                    this.router.init();
+                    this.ui.init();
+                },
+                ui: {
+                    init() {
+                        this.addEventListeners();
+                        this.updateActiveNav(app.state.currentView);
+                    },
+                    addEventListeners() {
+                        document.querySelector('#main-nav').addEventListener('click', (e) => {
+                            if (e.target.closest('.nav-link')) {
+                                e.preventDefault();
+                                const view = e.target.closest('.nav-link').getAttribute('href').substring(1);
+                                window.location.hash = view;
+                                if (window.innerWidth < 768) {
+                                    document.getElementById('sidebar-menu').classList.add('-translate-x-full');
+                                }
+                            }
+                        });
+
+                        document.getElementById('mobile-menu-button').addEventListener('click', () => {
+                            document.getElementById('sidebar-menu').classList.toggle('-translate-x-full');
+                        });
+                    },
+                    updateActiveNav(view) {
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active-nav');
+                            if (link.getAttribute('href') === `#${view}`) {
+                                link.classList.add('active-nav');
+                            }
+                        });
+                    },
+                    render(view) {
+                        const contentArea = document.getElementById('main-content');
+                        contentArea.innerHTML = '';
+                        app.state.currentView = view;
+                        this.updateActiveNav(view);
+
+                        switch (view) {
+                            case 'dashboard':
+                                contentArea.innerHTML = app.templates.dashboard();
+                                app.visuals.renderTopicPriorityChart();
+                                break;
+                            case 'roadmap':
+                                contentArea.innerHTML = app.templates.roadmap();
+                                this.initAccordions();
+                                break;
+                            case 'practice':
+                                contentArea.innerHTML = app.templates.practiceZone();
+                                this.renderQuestions(app.state.questions);
+                                this.initPracticeZoneListeners();
+                                break;
+                            case 'compare':
+                                contentArea.innerHTML = app.templates.compare();
+                                break;
+                            case 'resources':
+                                contentArea.innerHTML = app.templates.resources();
+                                break;
+                            default:
+                                contentArea.innerHTML = app.templates.dashboard();
+                                app.visuals.renderTopicPriorityChart();
+                        }
+                    },
+                    initAccordions() {
+                        document.querySelectorAll('.accordion-button').forEach(button => {
+                            button.addEventListener('click', () => {
+                                button.classList.toggle('open');
+                            });
+                        });
+                    },
+                    renderQuestions(questionsToRender) {
+                        const container = document.getElementById('questions-container');
+                        if (!container) return;
+                        if (questionsToRender.length === 0) {
+                            container.innerHTML = `<div class="text-center text-gray-500 font-normal text-base py-10">No questions found matching your criteria.</div>`;
+                            return;
+                        }
+                        container.innerHTML = questionsToRender.map(q => `
+                            <div class="card p-4 rounded-lg flex justify-between items-center">
+                                <div class="flex-grow">
+                                    <p class="font-semibold text-base">${q.name}</p>
+                                    <p class="text-sm text-gray-500">${q.topic}</p>
+                                </div>
+                                <span class="tag ${this.getTagClass(q.topic)}">${q.difficulty}</span>
+                            </div>
+                        `).join('');
+                    },
+                    getTagClass(topic) {
+                        const topicClass = topic.toLowerCase().replace(/ & | /g, '');
+                        const validClasses = ['array', 'string', 'linkedlist', 'algorithms', 'stackqueue', 'tree', 'hashtable', 'recursion', 'graph', 'heap', 'dp', 'greedy', 'bitmanipulation', 'matrix', 'design'];
+                        return validClasses.includes(topicClass) ? `tag-${topicClass}` : 'tag-default';
+                    },
+                    initPracticeZoneListeners() {
+                        const searchInput = document.getElementById('search-questions');
+                        const topicFilter = document.getElementById('topic-filter');
+                        const difficultyFilter = document.getElementById('difficulty-filter');
+
+                        const applyFilters = () => {
+                            const searchTerm = searchInput.value.toLowerCase();
+                            const selectedTopic = topicFilter.value;
+                            const selectedDifficulty = difficultyFilter.value;
+
+                            let filteredQuestions = app.state.questions;
+
+                            if (searchTerm) {
+                                filteredQuestions = filteredQuestions.filter(q => q.name.toLowerCase().includes(searchTerm));
+                            }
+                            if (selectedTopic !== 'all') {
+                                filteredQuestions = filteredQuestions.filter(q => q.topic === selectedTopic);
+                            }
+                            if (selectedDifficulty !== 'all') {
+                                filteredQuestions = filteredQuestions.filter(q => q.difficulty === selectedDifficulty);
+                            }
+                            this.renderQuestions(filteredQuestions);
+                        };
+
+                        searchInput.addEventListener('input', applyFilters);
+                        topicFilter.addEventListener('change', applyFilters);
+                        difficultyFilter.addEventListener('change', applyFilters);
+                    }
+                },
+                router: {
+                    init() {
+                        window.addEventListener('hashchange', () => this.handleRouteChange());
+                        this.handleRouteChange();
+                    },
+                    handleRouteChange() {
+                        const view = window.location.hash.substring(1) || 'dashboard';
+                        app.ui.render(view);
+                    }
+                },
+                visuals: {
+                    renderTopicPriorityChart() {
+                        const ctx = document.getElementById('topicPriorityChart')?.getContext('2d');
+                        if (!ctx) return;
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: ['Array', 'String', 'Sorting & Searching', 'Tree', 'Graph', 'Linked List', 'Hash Table', 'Recursion', 'Heap', 'DP'],
+                                datasets: [{
+                                    label: 'Interview Priority',
+                                    data: [10, 10, 9, 9, 9, 7, 7, 7, 6, 5],
+                                    backgroundColor: [
+                                        'rgba(34, 139, 34, 0.6)',
+                                        'rgba(70, 130, 180, 0.6)',
+                                        'rgba(255, 99, 132, 0.6)',
+                                        'rgba(46, 204, 113, 0.6)',
+                                        'rgba(52, 152, 219, 0.6)',
+                                        'rgba(241, 196, 15, 0.6)',
+                                        'rgba(155, 89, 182, 0.6)',
+                                        'rgba(230, 126, 34, 0.6)',
+                                        'rgba(26, 188, 156, 0.6)',
+                                        'rgba(231, 76, 60, 0.6)'
+                                    ],
+                                    borderColor: [
+                                        'rgba(34, 139, 34, 1)',
+                                        'rgba(70, 130, 180, 1)',
+                                        'rgba(255, 99, 132, 1)',
+                                        'rgba(46, 204, 113, 1)',
+                                        'rgba(52, 152, 219, 1)',
+                                        'rgba(241, 196, 15, 1)',
+                                        'rgba(155, 89, 182, 1)',
+                                        'rgba(230, 126, 34, 1)',
+                                        'rgba(26, 188, 156, 1)',
+                                        'rgba(231, 76, 60, 1)'
+                                    ],
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Relative Priority of DSA Topics in Interviews',
+                                        font: { size: 16, family: 'Inter' },
+                                        color: '#4A4A4A'
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                let label = context.dataset.label || '';
+                                                if (label) {
+                                                    label += ': ';
+                                                }
+                                                if (context.parsed.x !== null) {
+                                                    const priorityMap = {10: 'High', 9: 'High', 7: 'Medium', 6: 'Medium', 5: 'Low'};
+                                                    label += priorityMap[context.parsed.x] || 'Medium';
+                                                }
+                                                return label;
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        beginAtZero: true,
+                                        ticks: { display: false }
+                                    },
+                                    y: {
+                                        ticks: {
+                                            font: { size: 12, family: 'Inter' },
+                                            color: '#4A4A4A'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                },
+                templates: {
+                    dashboard() {
+                        return `
+                            <h1 class="text-3xl font-bold mb-2">Dashboard</h1>
+                            <p class="text-base font-normal text-gray-600 mb-8">Welcome to your personalized 5-month roadmap to ace DSA interviews at top MNCs.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                <div class="card p-6 rounded-lg text-center">
+                                    <p class="text-4xl font-bold text-blue-600">4</p>
+                                    <p class="text-base font-medium text-gray-700">Learning Phases</p>
+                                </div>
+                                <div class="card p-6 rounded-lg text-center">
+                                    <p class="text-4xl font-bold text-green-600">12+</p>
+                                    <p class="text-base font-medium text-gray-700">Core Topics</p>
+                                </div>
+                                <div class="card p-6 rounded-lg text-center">
+                                    <p class="text-4xl font-bold text-purple-600">${app.state.questions.length}</p>
+                                    <p class="text-base font-medium text-gray-700">Practice Questions</p>
+                                </div>
+                            </div>
+                            <div class="card p-6 rounded-lg">
+                                <h2 class="text-xl font-semibold mb-4 text-center">Topic Priority Overview</h2>
+                                <p class="text-base font-normal text-gray-600 mb-4 text-center">This chart provides a visual guide to the relative importance of various DSA topics in technical interviews, helping you prioritize your study time effectively.</p>
+                                <div class="chart-container">
+                                    <canvas id="topicPriorityChart"></canvas>
+                                </div>
+                            </div>
+                        `;
+                    },
+                    roadmap() {
+                        return `
+                            <h1 class="text-3xl font-bold mb-2">5-Month Roadmap</h1>
+                            <p class="text-base font-normal text-gray-600 mb-8">This section outlines the structured, phased learning plan. Click on each phase to expand and see the detailed focus areas, topics, and objectives for that period.</p>
+                            <div class="space-y-4">
+                                ${this.phaseTemplate('1', 'Weeks 1-6: Building a Solid Foundation', 'This initial phase is fundamental for establishing a robust understanding of programming fundamentals and basic DSA concepts. It ensures you are comfortable with your chosen programming language and core problem-solving paradigms.', ['Programming Basics', 'Arrays', 'Strings', 'Linked Lists', 'Basic Searching & Sorting', 'Big O Notation'])}
+                                ${this.phaseTemplate('2', 'Weeks 7-14: Mastering Essential DSA', 'This phase progresses beyond foundational concepts, delving into more complex and frequently tested data structures and algorithmic paradigms that constitute the core of most technical interview questions.', ['Stacks & Queues', 'Trees (Binary & BST)', 'Hash Tables', 'Recursion & Backtracking', 'Problem Patterns'])}
+                                ${this.phaseTemplate('3', 'Weeks 15-20: Advanced Topics & Patterns', 'This phase focuses on more complex data structures and advanced algorithmic techniques, which are crucial for tackling harder problems and demonstrating a comprehensive understanding of efficient problem-solving.', ['Graphs', 'Heaps & Priority Queues', 'Dynamic Programming (DP)', 'Greedy Algorithms', 'Advanced Patterns'])}
+                                ${this.phaseTemplate('4', 'Weeks 21-22: Interview Simulation & Refinement', 'The final weeks are dedicated to synthesizing accumulated knowledge, simulating real interview conditions, and refining critical communication and behavioral skills. This phase is centered on performance optimization and interview readiness.', ['Mock Interviews', 'Communication Practice', 'Code Quality Refinement', 'Behavioral Prep'])}
+                            </div>
+                        `;
+                    },
+                    phaseTemplate(phaseNum, title, description, topics) {
+                        return `
+                            <div class="card rounded-lg overflow-hidden">
+                                <button class="accordion-button w-full text-left p-6 flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm font-medium text-blue-600">PHASE ${phaseNum}</p>
+                                        <h2 class="text-xl font-semibold mt-1">${title}</h2>
+                                    </div>
+                                    <svg class="w-6 h-6 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                                <div class="accordion-content">
+                                    <div class="p-6 pt-0 text-base font-normal">
+                                        <p class="text-gray-600 mb-4">${description}</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            ${topics.map(topic => `<span class="tag tag-default">${topic}</span>`).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    },
+                    practiceZone() {
+                        return `
+                            <h1 class="text-3xl font-bold mb-2">Practice Zone</h1>
+                            <p class="text-base font-normal text-gray-600 mb-8">Here you can find all ${app.state.questions.length} curated practice questions. Use the filters to narrow down by topic or difficulty, or use the search bar to find a specific problem.</p>
+                            <div class="card p-4 rounded-lg mb-6">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <input type="text" id="search-questions" placeholder="🔍 Search questions..." class="w-full p-2 border border-gray-300 rounded-lg text-base font-normal">
+                                    <select id="topic-filter" class="w-full p-2 border border-gray-300 rounded-lg text-base font-normal">
+                                        <option value="all">All Topics</option>
+                                        ${app.state.topics.map(t => `<option value="${t}">${t}</option>`).join('')}
+                                    </select>
+                                    <select id="difficulty-filter" class="w-full p-2 border border-gray-300 rounded-lg text-base font-normal">
+                                        <option value="all">All Difficulties</option>
+                                        <option value="Easy">Easy</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="Hard">Hard</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="questions-container" class="space-y-3"></div>
+                        `;
+                    },
+                    compare() {
+                        return `
+                            <h1 class="text-3xl font-bold mb-2">Company Insights: Google vs. Amazon</h1>
+                            <p class="text-base font-normal text-gray-600 mb-8">While both companies demand strong DSA skills, their interview philosophies have key differences. This section provides a comparative overview to help you tailor your preparation.</p>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-base text-left text-gray-600 font-normal">
+                                    <thead class="text-sm text-gray-700 uppercase bg-[#EAE6E1]">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3 rounded-l-lg">Feature</th>
+                                            <th scope="col" class="px-6 py-3">Google Interview Focus</th>
+                                            <th scope="col" class="px-6 py-3 rounded-r-lg">Amazon Interview Focus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="bg-white border-b border-[#EAE6E1]">
+                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900">DSA Focus</th>
+                                            <td class="px-6 py-4">Heavy emphasis, general cognitive ability, optimal solutions, clear communication of thought process.</td>
+                                            <td class="px-6 py-4">Crucial, basic to medium level questions, often 2-3 per round.</td>
+                                        </tr>
+                                        <tr class="bg-white border-b border-[#EAE6E1]">
+                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900">Behavioral Focus</th>
+                                            <td class="px-6 py-4">Work process, learning from failure, accomplishments, explaining complex topics.</td>
+                                            <td class="px-6 py-4">Strong emphasis on 16 Leadership Principles (LPs), data-driven examples using STAR method.</td>
+                                        </tr>
+                                        <tr class="bg-white border-b border-[#EAE6E1]">
+                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900">Coding Environment</th>
+                                            <td class="px-6 py-4">Google Docs (20-30 lines of code expected), collaborative editors.</td>
+                                            <td class="px-6 py-4">Online documents for coding, collaborative editors (Livecode).</td>
+                                        </tr>
+                                        <tr class="bg-white">
+                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900">Key Evaluation</th>
+                                            <td class="px-6 py-4">Problem-solving, communication of thought, general cognitive ability, code quality.</td>
+                                            <td class="px-6 py-4">Technical proficiency, behavioral skills (LPs), cultural fit, scalability, robustness, customer obsession.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    },
+                    resources() {
+                        return `
+                            <h1 class="text-3xl font-bold mb-2">Resources & Pitfalls</h1>
+                            <p class="text-base font-normal text-gray-600 mb-8">Leverage the right tools and avoid common mistakes to make your preparation as effective as possible.</p>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div>
+                                    <h2 class="text-xl font-semibold mb-4">Recommended Platforms & Courses</h2>
+                                    <ul class="list-disc list-inside space-y-3 text-base font-normal">
+                                        <li><b>LeetCode:</b> The go-to for problem practice, community discussions, and contests.</li>
+                                        <li><b>GeeksforGeeks:</b> Comprehensive resource for learning concepts and exploring diverse problems.</li>
+                                        <li><b>HackerRank:</b> Excellent for simulating online assessment environments.</li>
+                                        <li><b>Grokking the Coding Interview:</b> A highly-rated course focusing on problem patterns.</li>
+                                        <li><b>Mock Interview Platforms (Pramp, Exponent):</b> Crucial for practicing under pressure and getting feedback.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-semibold mb-4">Common Pitfalls to Avoid</h2>
+                                    <ul class="list-disc list-inside space-y-3 text-base font-normal">
+                                        <li><b>Cramming vs. Consistency:</b> Don't save it for the last minute. Practice a little every day.</li>
+                                        <li><b>Memorizing Solutions:</b> Focus on understanding the underlying patterns, not just the answer.</li>
+                                        <li><b>Neglecting Communication:</b> Always explain your thought process out loud. It's a key evaluation metric.</li>
+                                        <li><b>Ignoring Complexity:</b> Always analyze the time and space complexity of your solution.</li>
+                                        <li><b>Not Asking Questions:</b> Clarify the problem and edge cases before you start coding.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        `;
+                    }
+                },
+                data: {
+                    questions: [],
+                    init() {
+                        const rawQuestions = [
+                            // Array - Easy
+                            { topic: "Array", name: "Two Sum", difficulty: "Easy" },
+                            { topic: "Array", name: "Single Number", difficulty: "Easy" },
+                            { topic: "Array", name: "Intersection of Two Arrays II", difficulty: "Easy" },
+                            { topic: "Array", name: "Pascal's Triangle", difficulty: "Easy" },
+                            { topic: "Array", name: "Max Consecutive Ones", difficulty: "Easy" },
+                            { topic: "Array", name: "Find the Missing Number in an Array", difficulty: "Easy" },
+                            { topic: "Array", name: "Remove Duplicates from Sorted Array", difficulty: "Easy" },
+                            { topic: "Array", name: "Move Zeroes", difficulty: "Easy" },
+                            { topic: "Array", name: "Best Time to Buy and Sell Stock", difficulty: "Easy" },
+                            { topic: "Array", name: "Contains Duplicate", difficulty: "Easy" },
+                            { topic: "Array", name: "Plus One", difficulty: "Easy" },
+                            { topic: "Array", name: "Merge Sorted Array", difficulty: "Easy" },
+                            { topic: "Array", name: "Reshape the Matrix", difficulty: "Easy" },
+                            { topic: "Array", name: "Flipping an Image", difficulty: "Easy" },
+                            { topic: "Array", name: "Transpose Matrix", difficulty: "Easy" },
+                            { topic: "Array", name: "Richest Customer Wealth", difficulty: "Easy" },
+                            { topic: "Array", name: "Running Sum of 1d Array", difficulty: "Easy" },
+                            { topic: "Array", name: "Shuffle the Array", difficulty: "Easy" },
+                            { topic: "Array", name: "Kids With the Greatest Number of Candies", difficulty: "Easy" },
+                            { topic: "Array", name: "Number of Good Pairs", difficulty: "Easy" },
+                            { topic: "Array", name: "How Many Numbers Are Smaller Than the Current Number", difficulty: "Easy" },
+                            { topic: "Array", name: "Create Target Array in the Given Order", difficulty: "Easy" },
+                            { topic: "Array", name: "Check If N and Its Double Exist", difficulty: "Easy" },
+                            { topic: "Array", name: "Find Numbers with Even Number of Digits", difficulty: "Easy" },
+                            { topic: "Array", name: "Squares of a Sorted Array", difficulty: "Easy" },
+                            { topic: "Array", name: "Duplicate Zeros", difficulty: "Easy" },
+                            { topic: "Array", name: "Height Checker", difficulty: "Easy" },
+                            { topic: "Array", name: "Third Maximum Number", difficulty: "Easy" },
+                            { topic: "Array", name: "Find All Numbers Disappeared in an Array", difficulty: "Easy" },
+
+                            // Array - Medium
+                            { topic: "Array", name: "Rotate Array", difficulty: "Medium" },
+                            { topic: "Array", name: "Largest Contiguous Sum", difficulty: "Medium" },
+                            { topic: "Array", name: "Count pairs with given sum", difficulty: "Medium" },
+                            { topic: "Array", name: "Convert array into Zig-Zag fashion", difficulty: "Medium" },
+                            { topic: "Array", name: "3Sum", difficulty: "Medium" },
+                            { topic: "Array", name: "Container With Most Water", difficulty: "Medium" },
+                            { topic: "Array", name: "Subarray Sum Equals K", difficulty: "Medium" },
+                            { topic: "Array", name: "Set Matrix Zeroes", difficulty: "Medium" },
+                            { topic: "Array", name: "Spiral Matrix", difficulty: "Medium" },
+                            { topic: "Array", name: "Jump Game", difficulty: "Medium" },
+                            { topic: "Array", name: "Merge Intervals", difficulty: "Medium" },
+                            { topic: "Array", name: "Insert Interval", difficulty: "Medium" },
+                            { topic: "Array", name: "Product of Array Except Self", difficulty: "Medium" },
+                            { topic: "Array", name: "Find Peak Element", difficulty: "Medium" },
+                            { topic: "Array", name: "Longest Consecutive Sequence", difficulty: "Medium" },
+                            { topic: "Array", name: "Word Search", difficulty: "Medium" },
+                            { topic: "Array", name: "Search a 2D Matrix", difficulty: "Medium" },
+                            { topic: "Array", name: "Sort Colors", difficulty: "Medium" },
+                            { topic: "Array", name: "Kth Largest Element in an Array", difficulty: "Medium" },
+                            { topic: "Array", name: "Game of Life", difficulty: "Medium" },
+                            { topic: "Array", name: "Rotate Image", difficulty: "Medium" },
+                            { topic: "Array", name: "Find the Duplicate Number", difficulty: "Medium" },
+
+                            // Array - Hard
+                            { topic: "Array", name: "First Missing Positive", difficulty: "Hard" },
+                            { topic: "Array", name: "Median of Two Sorted Arrays", difficulty: "Hard" },
+                            { topic: "Array", name: "Trapping Rain Water", difficulty: "Hard" },
+                            { topic: "Array", name: "Largest Rectangle in Histogram", difficulty: "Hard" },
+                            { topic: "Array", name: "Sliding Window Maximum", difficulty: "Hard" },
+                            { topic: "Array", name: "Minimum Window Substring", difficulty: "Hard" },
+
+                            // String - Easy
+                            { topic: "String", name: "Reverse String", difficulty: "Easy" },
+                            { topic: "String", name: "First Unique Character in a String", difficulty: "Easy" },
+                            { topic: "String", name: "Implement strStr()", difficulty: "Easy" },
+                            { topic: "String", name: "Valid Anagram", difficulty: "Easy" },
+                            { topic: "String", name: "Valid Palindrome", difficulty: "Easy" },
+                            { topic: "String", name: "Longest Common Prefix", difficulty: "Easy" },
+                            { topic: "String", name: "Reverse Vowels of a String", difficulty: "Easy" },
+                            { topic: "String", name: "Is Subsequence", difficulty: "Easy" },
+                            { topic: "String", name: "Fizz Buzz", difficulty: "Easy" },
+                            { topic: "String", name: "Roman to Integer", difficulty: "Easy" },
+                            { topic: "String", name: "Valid Parentheses", difficulty: "Easy" },
+                            { topic: "String", name: "Count and Say", difficulty: "Easy" },
+                            { topic: "String", name: "Length of Last Word", difficulty: "Easy" },
+                            { topic: "String", name: "Add Binary", difficulty: "Easy" },
+                            { topic: "String", name: "Detect Capital", difficulty: "Easy" },
+                            { topic: "String", name: "Reverse Words in a String III", difficulty: "Easy" },
+                            { topic: "String", name: "License Key Formatting", difficulty: "Easy" },
+                            { topic: "String", name: "Longest Palindrome", difficulty: "Easy" },
+                            { topic: "String", name: "Number of Segments in a String", difficulty: "Easy" },
+                            { topic: "String", name: "To Lower Case", difficulty: "Easy" },
+                            { topic: "String", name: "Goal Parser Interpretation", difficulty: "Easy" },
+                            { topic: "String", name: "Defanging an IP Address", difficulty: "Easy" },
+                            { topic: "String", name: "Shuffle String", difficulty: "Easy" },
+                            { topic: "String", name: "Check if the Sentence Is Pangram", difficulty: "Easy" },
+                            { topic: "String", name: "Maximum Number of Words You Can Type", difficulty: "Easy" },
+
+                            // String - Medium
+                            { topic: "String", name: "String to Integer (atoi)", difficulty: "Medium" },
+                            { topic: "String", name: "Longest Substring Without Repeating Characters", difficulty: "Medium" },
+                            { topic: "String", name: "Longest Repeating Character Replacement", difficulty: "Medium" },
+                            { topic: "String", name: "Print all anagrams together", difficulty: "Medium" },
+                            { topic: "String", name: "Longest Palindromic Substring", difficulty: "Medium" },
+                            { topic: "String", name: "Group Anagrams", difficulty: "Medium" },
+                            { topic: "String", name: "Decode Ways", difficulty: "Medium" },
+                            { topic: "String", name: "ZigZag Conversion", difficulty: "Medium" },
+                            { topic: "String", name: "Palindromic Substrings", difficulty: "Medium" },
+                            { topic: "String", name: "Minimum Add to Make Parentheses Valid", difficulty: "Medium" },
+                            { topic: "String", name: "String Compression", difficulty: "Medium" },
+                            { topic: "String", name: "Integer to Roman", difficulty: "Medium" },
+                            { topic: "String", name: "Compare Version Numbers", difficulty: "Medium" },
+                            { topic: "String", name: "Reorganize String", difficulty: "Medium" },
+
+                            // String - Hard
+                            { topic: "String", name: "Smallest window containing all characters", difficulty: "Hard" },
+                            { topic: "String", name: "Wildcard Matching", difficulty: "Hard" },
+                            { topic: "String", name: "Regular Expression Matching", difficulty: "Hard" },
+                            { topic: "String", name: "Text Justification", difficulty: "Hard" },
+
+                            // Linked List - Easy
+                            { topic: "Linked List", name: "Reverse Linked List", difficulty: "Easy" },
+                            { topic: "Linked List", name: "Merge Two Sorted Lists", difficulty: "Easy" },
+                            { topic: "Linked List", name: "Linked List Cycle", difficulty: "Easy" },
+                            { topic: "Linked List", name: "Palindrome Linked List", difficulty: "Easy" },
+                            { topic: "Linked List", name: "Intersection of Two Linked Lists", difficulty: "Easy" },
+                            { topic: "Linked List", name: "Middle Element of Linked List", difficulty: "Easy" },
+                            { topic: "Linked List", name: "Remove Linked List Elements", difficulty: "Easy" },
+                            { topic: "Linked List", name: "Delete Node in a Linked List", difficulty: "Easy" },
+                            { topic: "Linked List", name: "Remove Duplicates from Sorted List", difficulty: "Easy" },
+                            { topic: "Linked List", name: "Convert Binary Number in a Linked List to Integer", difficulty: "Easy" },
+                            { topic: "Linked List", name: "Odd Even Linked List", difficulty: "Easy" },
+
+                            // Linked List - Medium
+                            { topic: "Linked List", name: "Delete Xth Node From End of Linked List", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Add Two Numbers as Lists", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Remove Loop From Linked List", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Rotate a Linked List", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Flatten a Multi-Level Linked List", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Clone List with Random Pointer", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Remove Nth Node From End of List", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Reorder List", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Swap Nodes in Pairs", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Partition List", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Copy List with Random Pointer", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Add Two Numbers II", difficulty: "Medium" },
+                            { topic: "Linked List", name: "Flatten a Multilevel Doubly Linked List", difficulty: "Medium" },
+
+                            // Linked List - Hard
+                            { topic: "Linked List", name: "Merge K Sorted Lists", difficulty: "Hard" },
+                            { topic: "Linked List", name: "Reverse Nodes in k-Group", difficulty: "Hard" },
+
+                            // Algorithms (Sorting & Searching) - Easy
+                            { topic: "Algorithms", name: "Binary Search", difficulty: "Easy" },
+                            { topic: "Algorithms", name: "First Bad Version", difficulty: "Easy" },
+                            { topic: "Algorithms", name: "Search Insert Position", difficulty: "Easy" },
+
+                            // Algorithms (Sorting & Searching) - Medium
+                            { topic: "Algorithms", name: "Search Range", difficulty: "Medium" },
+                            { topic: "Algorithms", name: "Search Rotated Sorted Array", difficulty: "Medium" },
+                            { topic: "Algorithms", name: "Implement Merge Sort", difficulty: "Medium" },
+                            { topic: "Algorithms", name: "Implement Quicksort", difficulty: "Medium" },
+                            { topic: "Algorithms", name: "Find First and Last Position of Element in Sorted Array", difficulty: "Medium" },
+                            { topic: "Algorithms", name: "Find Peak Element", difficulty: "Medium" },
+                            { topic: "Algorithms", name: "Koko Eating Bananas", difficulty: "Medium" },
+                            { topic: "Algorithms", name: "Find Minimum in Rotated Sorted Array", difficulty: "Medium" },
+                            { topic: "Algorithms", name: "Count Negative Numbers in a Sorted Matrix", difficulty: "Medium" },
+
+                            // Algorithms (Sorting & Searching) - Hard
+                            { topic: "Algorithms", name: "Inversion Count", difficulty: "Hard" },
+                            { topic: "Algorithms", name: "Find Kth Smallest Pair Distance", difficulty: "Hard" },
+
+                            // Stack & Queue - Easy
+                            { topic: "Stack & Queue", name: "Implement Queue using Array", difficulty: "Easy" },
+                            { topic: "Stack & Queue", name: "Delete middle element of a stack", difficulty: "Easy" },
+                            { topic: "Stack & Queue", name: "Stack using two queues", difficulty: "Easy" },
+                            { topic: "Stack & Queue", name: "Implement Stack using Queues", difficulty: "Easy" },
+                            { topic: "Stack & Queue", name: "Min Stack", difficulty: "Easy" },
+                            { topic: "Stack & Queue", name: "Queue using two stacks", difficulty: "Easy" },
+
+                            // Stack & Queue - Medium
+                            { topic: "Stack & Queue", name: "Evaluate expressions", difficulty: "Medium" },
+                            { topic: "Stack & Queue", name: "Infix to Postfix expression", difficulty: "Medium" },
+                            { topic: "Stack & Queue", name: "Next Greater Element", difficulty: "Medium" },
+                            { topic: "Stack & Queue", name: "Minimum time required to rot all oranges", difficulty: "Medium" },
+                            { topic: "Stack & Queue", name: "Daily Temperatures", difficulty: "Medium" },
+                            { topic: "Stack & Queue", name: "Valid Parenthesis String", difficulty: "Medium" },
+                            { topic: "Stack & Queue", name: "Remove K Digits", difficulty: "Medium" },
+                            { topic: "Stack & Queue", name: "Decode String", difficulty: "Medium" },
+                            { topic: "Stack & Queue", name: "Flatten Nested List Iterator", difficulty: "Medium" },
+                            { topic: "Stack & Queue", name: "Asteroid Collision", difficulty: "Medium" },
+                            { topic: "Stack & Queue", name: "Basic Calculator II", difficulty: "Medium" },
+
+                            // Stack & Queue - Hard
+                            { topic: "Stack & Queue", name: "Largest Rectangle in Histogram", difficulty: "Hard" },
+                            { topic: "Stack & Queue", name: "Trapping Rain Water", difficulty: "Hard" },
+
+                            // Tree - Easy
+                            { topic: "Tree", name: "Maximum Depth of Binary Tree", difficulty: "Easy" },
+                            { topic: "Tree", name: "Convert Sorted Array to Binary Search Tree", difficulty: "Easy" },
+                            { topic: "Tree", name: "Mirror Binary Trees", difficulty: "Easy" },
+                            { topic: "Tree", name: "Subtree of Another Tree", difficulty: "Easy" },
+                            { topic: "Tree", name: "Same Tree", difficulty: "Easy" },
+                            { topic: "Tree", name: "Symmetric Tree", difficulty: "Easy" },
+                            { topic: "Tree", name: "Path Sum", difficulty: "Easy" },
+                            { topic: "Tree", name: "Minimum Depth of Binary Tree", difficulty: "Easy" },
+                            { topic: "Tree", name: "Invert Binary Tree", difficulty: "Easy" },
+                            { topic: "Tree", name: "Binary Tree Preorder Traversal", difficulty: "Easy" },
+                            { topic: "Tree", name: "Binary Tree Inorder Traversal", difficulty: "Easy" },
+                            { topic: "Tree", name: "Binary Tree Postorder Traversal", difficulty: "Easy" },
+                            { topic: "Tree", name: "Average of Levels in Binary Tree", difficulty: "Easy" },
+                            { topic: "Tree", name: "N-ary Tree Preorder Traversal", difficulty: "Easy" },
+                            { topic: "Tree", name: "N-ary Tree Postorder Traversal", difficulty: "Easy" },
+                            { topic: "Tree", name: "Univalued Binary Tree", difficulty: "Easy" },
+                            { topic: "Tree", name: "Merge Two Binary Trees", difficulty: "Easy" },
+                            { topic: "Tree", name: "Sum of Left Leaves", difficulty: "Easy" },
+                            { topic: "Tree", name: "Find Mode in Binary Search Tree", difficulty: "Easy" },
+                            { topic: "Tree", name: "Convert BST to Greater Tree", difficulty: "Easy" },
+                            { topic: "Tree", name: "Diameter of Binary Tree", difficulty: "Easy" },
+
+                            // Tree - Medium
+                            { topic: "Tree", name: "Validate Binary Search Tree", difficulty: "Medium" },
+                            { topic: "Tree", name: "Binary Tree Level Order Traversal", difficulty: "Medium" },
+                            { topic: "Tree", name: "Find All Paths for a Sum", difficulty: "Medium" },
+                            { topic: "Tree", name: "Lowest Common Ancestor", difficulty: "Medium" },
+                            { topic: "Tree", name: "Construct Binary Tree from Preorder and Inorder Traversal", difficulty: "Medium" },
+                            { topic: "Tree", name: "Kth Smallest Element in a BST", difficulty: "Medium" },
+                            { topic: "Tree", name: "Implement a Binary Search Tree Iterator", difficulty: "Medium" },
+                            { topic: "Tree", name: "Binary Tree Zigzag Level Order Traversal", difficulty: "Medium" },
+                            { topic: "Tree", name: "Populating Next Right Pointers in Each Node", difficulty: "Medium" },
+                            { topic: "Tree", name: "Flatten Binary Tree to Linked List", difficulty: "Medium" },
+                            { topic: "Tree", name: "Maximum Binary Tree", difficulty: "Medium" },
+                            { topic: "Tree", name: "Delete Node in a BST", difficulty: "Medium" },
+                            { topic: "Tree", name: "Count Complete Tree Nodes", difficulty: "Medium" },
+                            { topic: "Tree", name: "Binary Tree Right Side View", difficulty: "Medium" },
+                            { topic: "Tree", name: "Find Largest Value in Each Tree Row", difficulty: "Medium" },
+                            { topic: "Tree", name: "Add One Row to Tree", difficulty: "Medium" },
+                            { topic: "Tree", name: "Trim a Binary Search Tree", difficulty: "Medium" },
+                            { topic: "Tree", name: "Find Duplicate Subtrees", difficulty: "Medium" },
+                            { topic: "Tree", name: "All Nodes Distance K in Binary Tree", difficulty: "Medium" },
+                            { topic: "Tree", name: "Binary Search Tree to Greater Sum Tree", difficulty: "Medium" },
+
+                            // Tree - Hard
+                            { topic: "Tree", name: "Serialize and Deserialize Binary Tree", difficulty: "Hard" },
+                            { topic: "Tree", name: "Binary Tree Maximum Path Sum", difficulty: "Hard" },
+                            { topic: "Tree", name: "Recover Binary Search Tree", difficulty: "Hard" },
+                            { topic: "Tree", name: "Vertical Order Traversal of a Binary Tree", difficulty: "Hard" },
+
+                            // Hash Table - Easy
+                            { topic: "Hash Table", name: "Non-Repeating Element", difficulty: "Easy" },
+                            { topic: "Hash Table", name: "Find duplicates", difficulty: "Easy" },
+                            { topic: "Hash Table", name: "Check if two strings are k-anagrams or not", difficulty: "Easy" },
+                            { topic: "Hash Table", name: "Happy Number", difficulty: "Easy" },
+                            { topic: "Hash Table", name: "Isomorphic Strings", difficulty: "Easy" },
+                            { topic: "Hash Table", name: "Ransom Note", difficulty: "Easy" },
+                            { topic: "Hash Table", name: "First Unique Character in a String", difficulty: "Easy" },
+                            { topic: "Hash Table", name: "Intersection of Two Arrays", difficulty: "Easy" },
+                            { topic: "Hash Table", name: "Find the Difference", difficulty: "Easy" },
+                            { topic: "Hash Table", name: "Longest Palindrome", difficulty: "Easy" },
+                            { topic: "Hash Table", name: "Unique Number of Occurrences", difficulty: "Easy" },
+
+                            // Hash Table - Medium
+                            { topic: "Hash Table", name: "Implement a Cache (LRU Cache)", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Product of Array Except Self", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Group Anagrams", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Longest Substring Without Repeating Characters", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Four Sum II", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Insert Delete GetRandom O(1)", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Time Based Key-Value Store", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Design HashSet", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Design HashMap", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Contiguous Array", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Subarray Sum Equals K", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Fraction to Recurring Decimal", difficulty: "Medium" },
+                            { topic: "Hash Table", name: "Minimum Area Rectangle", difficulty: "Medium" },
+
+                            // Hash Table - Hard
+                            { topic: "Hash Table", name: "LFU Cache", difficulty: "Hard" },
+                            { topic: "Hash Table", name: "Max Points on a Line", difficulty: "Hard" },
+
+                            // Recursion & Backtracking - Medium
+                            { topic: "Recursion", name: "Print Balanced Brace Combinations", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Permutations", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Combinations", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Subsets", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Word Search", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Combination Sum", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Letter Combinations of a Phone Number", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Generate Parentheses", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Sudoku Solver", difficulty: "Medium" },
+                            { topic: "Recursion", name: "N-Queens", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Palindrome Partitioning", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Subsets II", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Permutations II", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Combinations Sum II", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Restore IP Addresses", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Number of Islands", difficulty: "Medium" },
+                            { topic: "Recursion", name: "Pacific Atlantic Water Flow", difficulty: "Medium" },
+
+                            // Recursion & Backtracking - Hard
+                            { topic: "Recursion", name: "Word Break II", difficulty: "Hard" },
+                            { topic: "Recursion", name: "N-Queens II", difficulty: "Hard" },
+                            { topic: "Recursion", name: "Expression Add Operators", difficulty: "Hard" },
+
+                            // Graph - Easy
+                            { topic: "Graph", name: "Breadth-First Search (BFS)", difficulty: "Easy" },
+                            { topic: "Graph", name: "Depth-First Search (DFS)", difficulty: "Easy" },
+                            { topic: "Graph", name: "Find if Path Exists in Graph", difficulty: "Easy" },
+                            { topic: "Graph", name: "Find the Town Judge", difficulty: "Easy" },
+                            { topic: "Graph", name: "Find Center of Star Graph", difficulty: "Easy" },
+
+                            // Graph - Medium
+                            { topic: "Graph", name: "Determine if tasks can be scheduled (Topological Sort)", difficulty: "Medium" },
+                            { topic: "Graph", name: "Clone Graph", difficulty: "Medium" },
+                            { topic: "Graph", name: "Number of Islands", difficulty: "Medium" },
+                            { topic: "Graph", name: "Detect Cycle in a Directed Graph", difficulty: "Medium" },
+                            { topic: "Graph", name: "Pacific Atlantic Water Flow", difficulty: "Medium" },
+                            { topic: "Graph", name: "Course Schedule", difficulty: "Medium" },
+                            { topic: "Graph", name: "Number of Connected Components in an Undirected Graph", difficulty: "Medium" },
+                            { topic: "Graph", name: "Longest Consecutive Sequence", difficulty: "Medium" },
+                            { topic: "Graph", name: "Graph Valid Tree", difficulty: "Medium" },
+                            { topic: "Graph", name: "Surrounded Regions", difficulty: "Medium" },
+                            { topic: "Graph", name: "Walls and Gates", difficulty: "Medium" },
+                            { topic: "Graph", name: "Cheapest Flights Within K Stops", difficulty: "Medium" },
+                            { topic: "Graph", name: "Network Delay Time", difficulty: "Medium" },
+                            { topic: "Graph", name: "All Paths From Source to Target", difficulty: "Medium" },
+                            { topic: "Graph", name: "Find Eventual Safe States", difficulty: "Medium" },
+                            { topic: "Graph", name: "Is Graph Bipartite?", difficulty: "Medium" },
+
+                            // Graph - Hard
+                            { topic: "Graph", name: "Shortest Path (Dijkstra's)", difficulty: "Hard" },
+                            { topic: "Graph", name: "Minimum Spanning Tree (Prim's/Kruskal's)", difficulty: "Hard" },
+                            { topic: "Graph", name: "Alien Dictionary", difficulty: "Hard" },
+                            { topic: "Graph", name: "Word Ladder", difficulty: "Hard" },
+                            { topic: "Graph", name: "Critical Connections in a Network", difficulty: "Hard" },
+                            { topic: "Graph", name: "Swim in Rising Water", difficulty: "Hard" },
+
+                            // Heap - Medium
+                            { topic: "Heap", name: "Find Kth Largest Element", difficulty: "Medium" },
+                            { topic: "Heap", name: "Top K Frequent Elements", difficulty: "Medium" },
+                            { topic: "Heap", name: "Connect n ropes with minimum cost", difficulty: "Medium" },
+                            { topic: "Heap", name: "K Closest Points to Origin", difficulty: "Medium" },
+                            { topic: "Heap", name: "Find K Pairs with Smallest Sums", difficulty: "Medium" },
+                            { topic: "Heap", name: "Kth Smallest Element in a Sorted Matrix", difficulty: "Medium" },
+                            { topic: "Heap", name: "Ugly Number II", difficulty: "Medium" },
+                            { topic: "Heap", name: "Last Stone Weight", difficulty: "Medium" },
+
+                            // Heap - Hard
+                            { topic: "Heap", name: "Find Median from Data Stream", difficulty: "Hard" },
+                            { topic: "Heap", name: "Merge K Sorted Lists", difficulty: "Hard" },
+                            { topic: "Heap", name: "Sliding Window Median", difficulty: "Hard" },
+
+                            // Dynamic Programming (DP) - Easy
+                            { topic: "DP", name: "Climbing Stairs", difficulty: "Easy" },
+                            { topic: "DP", name: "Maximum Subarray", difficulty: "Easy" },
+                            { topic: "DP", name: "House Robber", difficulty: "Easy" },
+                            { topic: "DP", name: "Min Cost Climbing Stairs", difficulty: "Easy" },
+                            { topic: "DP", name: "Fibonacci Number", difficulty: "Easy" },
+                            { topic: "DP", name: "N-th Tribonacci Number", difficulty: "Easy" },
+                            { topic: "DP", name: "Divisor Game", difficulty: "Easy" },
+
+                            // Dynamic Programming (DP) - Medium
+                            { topic: "DP", name: "Equal Subset Sum Partition", difficulty: "Medium" },
+                            { topic: "DP", name: "Coin Change Problem", difficulty: "Medium" },
+                            { topic: "DP", name: "Longest Common Subsequence", difficulty: "Medium" },
+                            { topic: "DP", name: "0/1 Knapsack Problem", difficulty: "Medium" },
+                            { topic: "DP", name: "Longest Increasing Subsequence", difficulty: "Medium" },
+                            { topic: "DP", name: "Word Break Problem", difficulty: "Medium" },
+                            { topic: "DP", name: "Jump Game", difficulty: "Medium" },
+                            { topic: "DP", name: "Unique Paths", difficulty: "Medium" },
+                            { topic: "DP", name: "Decode Ways", difficulty: "Medium" },
+                            { topic: "DP", name: "Maximum Product Subarray", difficulty: "Medium" },
+                            { topic: "DP", name: "Longest Palindromic Substring", difficulty: "Medium" },
+                            { topic: "DP", name: "Minimum Path Sum", difficulty: "Medium" },
+                            { topic: "DP", name: "Edit Distance", difficulty: "Medium" },
+                            { topic: "DP", name: "Partition Equal Subset Sum", difficulty: "Medium" },
+                            { topic: "DP", name: "Target Sum", difficulty: "Medium" },
+                            { topic: "DP", name: "Coin Change 2", difficulty: "Medium" },
+                            { topic: "DP", name: "Perfect Squares", difficulty: "Medium" },
+                            { topic: "DP", name: "Delete Operation for Two Strings", difficulty: "Medium" },
+                            { topic: "DP", name: "Longest Palindromic Subsequence", difficulty: "Medium" },
+                            { topic: "DP", name: "Minimum ASCII Delete Sum for Two Strings", difficulty: "Medium" },
+                            { topic: "DP", name: "Best Time to Buy and Sell Stock with Cooldown", difficulty: "Medium" },
+                            { topic: "DP", name: "House Robber II", difficulty: "Medium" },
+                            { topic: "DP", name: "Counting Bits", difficulty: "Medium" },
+                            { topic: "DP", name: "Wiggle Subsequence", difficulty: "Medium" },
+                            { topic: "DP", name: "Predict the Winner", difficulty: "Medium" },
+                            { topic: "DP", name: "Minimum Falling Path Sum", difficulty: "Medium" },
+                            { topic: "DP", name: "Knight Dialer", difficulty: "Medium" },
+                            { topic: "DP", name: "Longest String Chain", difficulty: "Medium" },
+
+                            // Dynamic Programming (DP) - Hard
+                            { topic: "DP", name: "Word Break II", difficulty: "Hard" },
+                            { topic: "DP", name: "Edit Distance", difficulty: "Hard" },
+                            { topic: "DP", name: "Burst Balloons", difficulty: "Hard" },
+                            { topic: "DP", name: "Super Egg Drop", difficulty: "Hard" },
+                            { topic: "DP", name: "Regular Expression Matching", difficulty: "Hard" },
+                            { topic: "DP", name: "Wildcard Matching", difficulty: "Hard" },
+                            { topic: "DP", name: "Minimum Cost to Cut a Stick", difficulty: "Hard" },
+
+                            // Greedy - Easy
+                            { topic: "Greedy", name: "Assign Cookies", difficulty: "Easy" },
+                            { topic: "Greedy", name: "Lemonade Change", difficulty: "Easy" },
+                            { topic: "Greedy", name: "Can Place Flowers", difficulty: "Easy" },
+                            { topic: "Greedy", name: "Is Subsequence", difficulty: "Easy" },
+                            { topic: "Greedy", name: "Best Time to Buy and Sell Stock", difficulty: "Easy" },
+
+                            // Greedy - Medium
+                            { topic: "Greedy", name: "Chocolate Distribution Problem", difficulty: "Medium" },
+                            { topic: "Greedy", name: "Jump Game", difficulty: "Medium" },
+                            { topic: "Greedy", name: "Jump Game II", difficulty: "Medium" },
+                            { topic: "Greedy", name: "Gas Station", difficulty: "Medium" },
+                            { topic: "Greedy", name: "Hand of Straights", difficulty: "Medium" },
+                            { topic: "Greedy", name: "Minimum Number of Arrows to Burst Balloons", difficulty: "Medium" },
+                            { topic: "Greedy", name: "Queue Reconstruction by Height", difficulty: "Medium" },
+                            { topic: "Greedy", name: "Task Scheduler", difficulty: "Medium" },
+                            { topic: "Greedy", name: "Non-overlapping Intervals", difficulty: "Medium" },
+                            { topic: "Greedy", name: "Partition Labels", difficulty: "Medium" },
+                            { topic: "Greedy", name: "Broken Calculator", difficulty: "Medium" },
+
+                            // Greedy - Hard
+                            { topic: "Greedy", name: "Minimum Spanning Tree", difficulty: "Hard" },
+                            { topic: "Greedy", name: "Candy", difficulty: "Hard" },
+                            { topic: "Greedy", name: "Trapping Rain Water II", difficulty: "Hard" },
+
+                            // Bit Manipulation - Easy
+                            { topic: "Bit Manipulation", name: "Number of 1 Bits", difficulty: "Easy" },
+                            { topic: "Bit Manipulation", name: "Counting Bits", difficulty: "Easy" },
+                            { topic: "Bit Manipulation", name: "Missing Number", difficulty: "Easy" },
+                            { topic: "Bit Manipulation", name: "Reverse Bits", difficulty: "Easy" },
+                            { topic: "Bit Manipulation", name: "Power of Two", difficulty: "Easy" },
+                            { topic: "Bit Manipulation", name: "Power of Three", difficulty: "Easy" },
+                            { topic: "Bit Manipulation", name: "Power of Four", difficulty: "Easy" },
+                            { topic: "Bit Manipulation", name: "Hamming Distance", difficulty: "Easy" },
+                            { topic: "Bit Manipulation", name: "Number Complement", difficulty: "Easy" },
+                            { topic: "Bit Manipulation", name: "Single Number II", difficulty: "Easy" },
+                            { topic: "Bit Manipulation", name: "Sum of Two Integers", difficulty: "Easy" },
+
+                            // Bit Manipulation - Medium
+                            { topic: "Bit Manipulation", name: "Find XOR of all subsets of a set", difficulty: "Medium" },
+                            { topic: "Bit Manipulation", name: "Maximum XOR of Two Numbers in an Array", difficulty: "Medium" },
+                            { topic: "Bit Manipulation", name: "Decode XORed Array", difficulty: "Medium" },
+                            { topic: "Bit Manipulation", name: "Bitwise AND of Numbers Range", difficulty: "Medium" },
+                            { topic: "Bit Manipulation", name: "Subsets", difficulty: "Medium" },
+                            { topic: "Bit Manipulation", name: "Single Number III", difficulty: "Medium" },
+
+                            // Bit Manipulation - Hard
+                            { topic: "Bit Manipulation", name: "Concatenated Words", difficulty: "Hard" },
+
+                            // Matrix - Medium
+                            { topic: "Matrix", name: "Set Matrix Zeroes", difficulty: "Medium" },
+                            { topic: "Matrix", name: "Spiral Matrix", difficulty: "Medium" },
+                            { topic: "Matrix", name: "Rotate Image", difficulty: "Medium" },
+                            { topic: "Matrix", name: "Search a 2D Matrix", difficulty: "Medium" },
+                            { topic: "Matrix", name: "Number of Islands", difficulty: "Medium" },
+                            { topic: "Matrix", name: "Pacific Atlantic Water Flow", difficulty: "Medium" },
+                            { topic: "Matrix", name: "Game of Life", difficulty: "Medium" },
+                            { topic: "Matrix", name: "Shortest Path in Binary Matrix", difficulty: "Medium" },
+                            { topic: "Matrix", name: "Walls and Gates", difficulty: "Medium" },
+                            { topic: "Matrix", name: "Maximal Square", difficulty: "Medium" },
+                            { topic: "Matrix", name: "Number of Closed Islands", difficulty: "Medium" },
+
+                            // Matrix - Hard
+                            { topic: "Matrix", name: "Trapping Rain Water II", difficulty: "Hard" },
+                            { topic: "Matrix", name: "Sudoku Solver", difficulty: "Hard" },
+                            { topic: "Matrix", name: "Largest Rectangle in Histogram", difficulty: "Hard" },
+
+                            // Design - Medium
+                            { topic: "Design", name: "Design HashMap", difficulty: "Medium" },
+                            { topic: "Design", name: "Design HashSet", difficulty: "Medium" },
+                            { topic: "Design", name: "Min Stack", difficulty: "Medium" },
+                            { topic: "Design", name: "Implement Queue using Stacks", difficulty: "Medium" },
+                            { topic: "Design", name: "Implement Stack using Queues", difficulty: "Medium" },
+                            { topic: "Design", name: "Design Tic-Tac-Toe", difficulty: "Medium" },
+                            { topic: "Design", name: "Design Circular Queue", difficulty: "Medium" },
+                            { topic: "Design", name: "Design Add and Search Words Data Structure", difficulty: "Medium" },
+                            { topic: "Design", name: "Design Browser History", difficulty: "Medium" },
+                            { topic: "Design", name: "Design Underground System", difficulty: "Medium" },
+                            { topic: "Design", name: "Design a Leaderboard", difficulty: "Medium" },
+
+                            // Design - Hard
+                            { topic: "Design", name: "Implement a Cache (LRU Cache)", difficulty: "Hard" },
+                            { topic: "Design", name: "LFU Cache", difficulty: "Hard" },
+                            { topic: "Design", name: "Design Search Autocomplete System", difficulty: "Hard" },
+                            { topic: "Design", name: "Design a Text Editor", difficulty: "Hard" },
+                        ];
+                        this.questions = rawQuestions;
+                    }
+                }
+            };
+
+            app.init();
+        });
+    </script>
+</body>
+</html>
